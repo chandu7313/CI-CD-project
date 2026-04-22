@@ -1,0 +1,46 @@
+name: CD - Deploy to AWS
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Push"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to AWS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            mkdir -p ~/ci-cd-app
+            cd ~/ci-cd-app
+            
+            cat <<EOF > docker-compose.yml
+            services:
+              backend:
+                image: chandu9000/ci-cd-backend:latest
+                ports:
+                  - "4000:4000"
+                environment:
+                  - MONGODB_URI=mongodb+srv://Chandramohan4156:Gcm12316144@cluster0.9ujym.mongodb.net/ci-cd
+                  - PORT=4000
+                restart: always
+
+              frontend:
+                image: chandu9000/ci-cd-frontend:latest
+                ports:
+                  - "80:80"
+                depends_on:
+                  - backend
+                restart: always
+            EOF
+
+            docker-compose pull
+            docker-compose up -d
+            docker image prune -f

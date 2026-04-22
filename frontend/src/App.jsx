@@ -6,7 +6,7 @@ function App() {
   const [newItem, setNewItem] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://localhost:4000/api/items';
+  const API_URL = `http://${window.location.hostname}:4000/api/items`;
 
   useEffect(() => {
     fetchItems();
